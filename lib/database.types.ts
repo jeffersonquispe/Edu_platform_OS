@@ -42,6 +42,7 @@ export interface Database {
           cover_url: string | null;
           status: CourseStatus;
           price: number;
+          embedding: number[] | null;
           created_at: string;
           updated_at: string;
         };
@@ -54,6 +55,7 @@ export interface Database {
           cover_url?: string | null;
           status?: CourseStatus;
           price?: number;
+          embedding?: number[] | null;
         };
         Update: {
           title?: string;
@@ -62,6 +64,7 @@ export interface Database {
           cover_url?: string | null;
           status?: CourseStatus;
           price?: number;
+          embedding?: number[] | null;
         };
         Relationships: [
           {
@@ -220,7 +223,20 @@ export interface Database {
       };
     };
     Functions: {
-      [key: string]: never;
+      match_courses: {
+        Args: {
+          query_embedding: number[];
+          match_count?: number;
+        };
+        Returns: {
+          id: string;
+          title: string;
+          slug: string;
+          description: string | null;
+          price: number;
+          similarity: number;
+        }[];
+      };
     };
     Enums: {
       [key: string]: never;

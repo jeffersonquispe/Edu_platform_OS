@@ -586,6 +586,17 @@ textarea {
   text-decoration: none;
 }
 
+.course-card:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 3px;
+  border-radius: var(--radius-xl);
+}
+
+.course-card:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-md);
+}
+
 .course-card-thumb {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -610,6 +621,97 @@ textarea {
   font-size: var(--text-xs);
   color: var(--color-muted);
   margin-bottom: var(--space-3);
+}
+
+/* Semantic course search (home page hero) */
+.course-search {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+  max-width: 620px;
+}
+
+.course-search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.course-search-icon {
+  position: absolute;
+  left: var(--space-4);
+  width: 20px;
+  height: 20px;
+  color: var(--color-muted);
+  pointer-events: none;
+}
+
+.course-search-field input {
+  width: 100%;
+  margin: 0;
+  padding: var(--space-3) var(--space-10) var(--space-3) var(--space-12);
+  font-size: var(--text-base);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out);
+}
+
+.course-search-field input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.course-search-field input:focus {
+  outline: none;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px var(--color-brand-soft);
+}
+
+.course-search-clear {
+  position: absolute;
+  right: var(--space-3);
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  color: var(--color-muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: color var(--dur-base) var(--ease-out),
+              background var(--dur-base) var(--ease-out);
+}
+
+.course-search-clear svg {
+  width: 14px;
+  height: 14px;
+}
+
+.course-search-clear:hover {
+  color: var(--color-text);
+  background: var(--color-surface-2);
+}
+
+.course-search-clear:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.search-summary {
+  margin-top: var(--space-6);
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+@media (max-width: 560px) {
+  .course-search {
+    flex-direction: column;
+  }
 }
 
 /* =========================================================
