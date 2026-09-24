@@ -1,0 +1,490 @@
+/* Edy assistant widget — uses the platform's own design tokens
+   (see app/globals.css) so it matches light/dark theme automatically. */
+
+.edy-widget {
+  position: fixed;
+  right: var(--space-6);
+  bottom: var(--space-6);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.edy-launcher {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--gradient-brand);
+  color: var(--color-inverse);
+  font-size: 22px;
+  cursor: pointer;
+  box-shadow: var(--shadow-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+
+.edy-launcher:hover {
+  transform: scale(1.05);
+}
+
+.edy-panel {
+  width: min(380px, calc(100vw - 2 * var(--space-6)));
+  max-height: min(560px, calc(100vh - 140px));
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+}
+
+.edy-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  flex-shrink: 0;
+}
+
+.edy-panel-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.edy-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--gradient-brand);
+  color: var(--color-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.edy-avatar-lg {
+  width: 56px;
+  height: 56px;
+  font-size: 26px;
+  box-shadow: 0 0 0 10px var(--color-brand-soft);
+}
+
+.edy-panel-title {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+}
+
+.edy-panel-subtitle {
+  font-size: 11px;
+  color: var(--color-muted);
+}
+
+.edy-icon-btn {
+  background: none;
+  border: none;
+  color: var(--color-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: var(--space-1);
+  line-height: 1;
+}
+
+.edy-icon-btn:hover {
+  color: var(--color-text);
+}
+
+.edy-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.edy-call-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--color-muted);
+  user-select: none;
+}
+
+.edy-switch {
+  width: 34px;
+  height: 19px;
+  border-radius: var(--radius-full);
+  background: var(--color-border-2);
+  border: none;
+  position: relative;
+  cursor: pointer;
+  padding: 0;
+  transition: background var(--dur-base) var(--ease-out);
+  flex-shrink: 0;
+}
+
+.edy-switch-on {
+  background: var(--color-brand);
+}
+
+.edy-switch:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.edy-switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left var(--dur-base) var(--ease-out);
+}
+
+.edy-switch-on .edy-switch-knob {
+  left: 17px;
+}
+
+.edy-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-10) var(--space-6);
+  text-align: center;
+  overflow-y: auto;
+}
+
+.edy-welcome-title {
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text);
+}
+
+.edy-welcome-text {
+  font-size: var(--text-sm);
+  color: var(--color-text-2);
+  line-height: 1.5;
+  max-width: 280px;
+  margin: 0;
+}
+
+.edy-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  margin-top: var(--space-2);
+}
+
+.edy-suggestion {
+  text-align: left;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-2);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+.edy-suggestion:hover {
+  border-color: var(--color-brand-border);
+  background: var(--color-brand-soft);
+}
+
+/* ---- Voice call view ---- */
+
+.edy-call {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  padding: var(--space-12) var(--space-6);
+  background: var(--gradient-surface);
+}
+
+.edy-call-orb-wrap {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edy-call-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--color-brand-border);
+  animation: edy-call-ring 2s ease-out infinite;
+}
+
+.edy-call-ring-delay {
+  animation-delay: 0.6s;
+}
+
+.edy-call-orb {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  font-size: 30px;
+}
+
+@keyframes edy-call-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.edy-call-status {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text);
+}
+
+.edy-call-bars {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  height: 20px;
+}
+
+.edy-call-bar {
+  width: 3px;
+  height: 8px;
+  background: var(--color-border-2);
+  border-radius: 2px;
+  transition: height var(--dur-base) var(--ease-out);
+}
+
+.edy-call-bars-active .edy-call-bar {
+  height: 18px;
+  background: var(--color-brand);
+  animation: edy-call-bar 1.1s ease-in-out infinite;
+}
+
+@keyframes edy-call-bar {
+  0%,
+  100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.edy-call-controls {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.edy-call-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font-size: 17px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edy-call-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.edy-call-btn-muted {
+  background: var(--color-error-soft);
+  border-color: var(--color-error-border);
+}
+
+.edy-call-btn-hangup {
+  background: var(--color-error);
+  border: none;
+  color: #fff;
+  font-size: 18px;
+}
+
+.edy-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.edy-message {
+  max-width: 85%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.edy-message-user {
+  align-self: flex-end;
+  background: var(--color-brand);
+  color: var(--color-inverse);
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.edy-message-edy {
+  align-self: flex-start;
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  border-bottom-left-radius: var(--radius-sm);
+}
+
+.edy-message-pending {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--space-3);
+}
+
+.edy-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-muted-2);
+  animation: edy-dot-bounce 1s infinite ease-in-out;
+}
+
+.edy-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.edy-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes edy-dot-bounce {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+.edy-error {
+  margin: 0 var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-error-soft);
+  border: 1px solid var(--color-error-border);
+  color: var(--color-error);
+  font-size: var(--text-xs);
+  flex-shrink: 0;
+}
+
+.edy-input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.edy-input {
+  flex: 1;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: var(--color-base);
+}
+
+.edy-input:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 1px;
+}
+
+.edy-send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--color-brand);
+  color: var(--color-inverse);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.edy-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edy-launcher,
+  .edy-suggestion,
+  .edy-dot,
+  .edy-call-ring,
+  .edy-call-bar {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .edy-widget {
+    right: var(--space-4);
+    bottom: var(--space-4);
+    left: var(--space-4);
+    align-items: stretch;
+  }
+
+  .edy-panel {
+    width: 100%;
+  }
+
+  .edy-launcher {
+    align-self: flex-end;
+  }
+}

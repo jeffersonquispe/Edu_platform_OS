@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Piano de Cola Negro</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #1b1b1b; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    #__bundler_loading { position: fixed; bottom: 20px; right: 20px; font: 13px/1.4 -apple-system, BlinkMacSystemFont, sans-serif; color: #666; background: #fff; padding: 8px 14px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.12); z-index: 10000; }
+    #__bundler_thumbnail { position: fixed; inset: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #1b1b1b; z-index: 9999; }
+    #__bundler_thumbnail svg { width: 100%; height: 100%; object-fit: contain; }
+    #__bundler_placeholder { color: #999; font-size: 14px; }
+  </style>
+  <noscript>
+    <style>#__bundler_loading { display: none; }</style>
+    <div style="position:fixed;bottom:12px;left:12px;font:13px/1.4 -apple-system,BlinkMacSystemFont,sans-serif;color:#999;background:rgba(255,255,255,0.9);padding:6px 12px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.08);z-index:10000;">
+      This page requires JavaScript to display.
+    </div>
+  </noscript>
+</head>
+<body>
+  <div id="__bundler_thumbnail">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#1b1b1b"></rect>
+    <path d="M300 500 L900 500 L1000 260 L860 220 L520 300 L300 300 Z" fill="#060606" stroke="#333" stroke-width="4"></path>
+    <rect x="330" y="500" width="500" height="60" fill="#0c0c0c" stroke="#333" stroke-width="3"></rect>
+  </svg>
+</div>
+  <div id="__bundler_loading">Unpacking...</div>
+
+  <script>
+    
+document.addEventListener('DOMContentLoaded', async function() {
+  const loading = document.getElementById('__bundler_loading');
+  function setStatus(msg) { if (loading) loading.textContent = msg; }
+
+  const FONT_MIME = /^(font[/]|application[/](x-)?font-|application[/]vnd\.ms-fontobject)/i;
+  const MIME_TOKEN = /^[\w.+-]+[/][\w.+-]+$/;
+  function toBase64(bytes) {
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(bin);
+  }
+
+  // Error sink persists across replaceWith since it's on window, not the DOM.
+  window.addEventListener('error', function(e) {
+    // Failed resource loads (CSP-blocked links, scripts, images) fire plain
+    // events at the element — warn only; real JS errors carry message/error.
+    if (!e.message && !e.error && e.target && e.target !== window) {
+      console.warn('[bundle] resource failed to load:',
+        e.target.tagName, String(e.target.src || e.target.href || ''));
+      return;
+    }
+    var p = document.body || document.documentElement;
+    var d = document.getElementById('__bundler_err') || p.appendChild(document.createElement('div'));
+    d.id = '__bundler_err';
+    d.style.cssText = 'position:fixed;bottom:12px;left:12px;right:12px;font:12px/1.4 ui-monospace,monospace;background:#2a1215;color:#ff8a80;padding:10px 14px;border-radius:8px;border:1px solid #5c2b2e;z-index:99999;white-space:pre-wrap;max-height:40vh;overflow:auto';
+    d.textContent = (d.textContent ? d.textContent + String.fromCharCode(10) : '') +
+      '[bundle] ' + (e.message || e.type) +
+      (e.filename ? ' (' + e.filename.slice(0, 60) + ':' + e.lineno + ')' : '');
+  }, true);
+
+  try {
+    const manifestEl = document.querySelector('script[type="__bundler/manifest"]');
+    const templateEl = document.querySelector('script[type="__bundler/template"]');
+    if (!manifestEl || !templateEl) {
+      setStatus('Error: missing bundle data');
+      console.error('[bundler] Missing script tags — manifestEl:', !!manifestEl, 'templateEl:', !!templateEl);
+      return;
+    }
+
+    const manifest = JSON.parse(manifestEl.textContent);
+    let template = JSON.parse(templateEl.textContent);
+
+    // Nested page bundles (iframe targets). Each ships ONCE, in the ROOT
+    // document's manifest; frame srcs carry an about:blank#<uuid> marker
+    // instead of a substitutable uuid. Every document mints the blobs for
+    // its OWN frames — from local text at the root, or text obtained from
+    // its DIRECT parent over the relay protocol below — so each frame
+    // navigation stays same-origin with its initiator and a deduped page
+    // loads at any depth on any host, including a file:// download's
+    // opaque origins (where a blob minted by one document cannot be
+    // navigated to by another).
+    const pageOrderEl = document.querySelector('script[type="__bundler/page_order"]');
+    const pageOrder = pageOrderEl ? JSON.parse(pageOrderEl.textContent) : [];
+    const pageSet = new Set(pageOrder);
+    const pageTexts = {};
+
+    // ── Nested-page text protocol (parent-chain relay) ──
+    // Page bundles ship once, in the ROOT document's manifest. Every
+    // document mints the blobs for its OWN frames, obtaining page text
+    // through a strict parent-chain relay: a document only ever SENDS to
+    // its direct parent (which, for every document the publisher's own
+    // runtime minted, is another publisher document) and only ACCEPTS
+    // text from that direct parent; requests from below are honored only
+    // for the document's own child frames, and the ROOT never sends
+    // upward at all. That last rule is load-bearing: the artifact host's
+    // frame-ancestors allows claude.ai (and friends) to frame an
+    // artifact, so window.top can be a FOREIGN document — a top-addressed
+    // protocol would hand page uuids to that ancestor and accept forged
+    // "page text" from it, minting attacker HTML as an artifact-origin
+    // blob document. The chain never touches the ancestor: requests stop
+    // at the root, replies are origin-addressed per hop (never '*' when
+    // an origin exists), and both directions are origin-gated (on https
+    // a foreign sender's origin can never equal this document's; in
+    // opaque contexts — file:// — everything serializes as 'null', where
+    // an embedded EXTERNAL frame still fails the gate by carrying its
+    // own real origin, and a sandboxed child of such a frame is excluded
+    // by the own-child-frames check plus uuid unguessability). Shape is
+    // deny-by-default: one request form, one reply form, no error
+    // replies.
+    // window.origin is the SERIALIZED SECURITY origin ('null' in opaque
+    // contexts such as a sandboxed preview iframe) — location.origin is
+    // computed from the URL and stays 'https://…' even when the document
+    // is sandboxed, which would misgate every opaque chain.
+    const OWN_TARGET = /^https?:[/][/]/.test(window.origin || '')
+      ? window.origin
+      : '*';
+    function trustedOrigin(e) {
+      if (e.origin === window.origin) return true; // https chains; opaque==opaque
+      // file:// trees: Chrome serializes the file document's origin as
+      // 'file://' while the blob: documents it mints serialize as 'null',
+      // so the two legitimate shapes can never string-match — accept the
+      // pair in both directions. https origins never serialize as either,
+      // and sender identity (own child frame / direct parent) is checked
+      // separately.
+      return (
+        (e.origin === 'null' &&
+          (window.origin === 'file://' ||
+            window.location.protocol === 'file:')) ||
+        (/^file:/.test(e.origin) && window.origin === 'null')
+      );
+    }
+    // Non-empty only in the root document (nested bundles ship an empty
+    // island), so it doubles as the root marker: the root answers from
+    // local text and treats a miss as authoritative — never relaying to
+    // its (possibly foreign) parent.
+    const isPageRoot = pageOrder.length > 0;
+    const blobUrls = {};
+    const resourceBlobs = {};
+    const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+    const pendingFrames = {}; // uuid -> [{el, frag}] awaiting text for own frames
+    const pendingRelays = {}; // uuid -> [childWindow] awaiting text to pass down
+    function mountPage(el, frag, text) {
+      const pageBlob = new Blob([text], { type: 'text/html' });
+      const u = URL.createObjectURL(pageBlob);
+      resourceBlobs[u] = pageBlob;
+      el.src = u + frag;
+    }
+    function deliverPage(uuid, text) {
+      const frames = pendingFrames[uuid];
+      delete pendingFrames[uuid];
+      if (frames) for (const f of frames) mountPage(f.el, f.frag, text);
+      const relays = pendingRelays[uuid];
+      delete pendingRelays[uuid];
+      if (relays) {
+        for (const cw of relays) {
+          try { cw.postMessage({ __bundler_page: uuid, __bundler_text: text }, OWN_TARGET); } catch (err) { /* gone */ }
+        }
+      }
+    }
+    function ownFrameWindows() {
+      const out = [];
+      for (const f of Array.from(document.querySelectorAll('iframe'))) {
+        try { if (f.contentWindow) out.push(f.contentWindow); } catch (err) { /* detached */ }
+      }
+      return out;
+    }
+    window.addEventListener('message', function (e) {
+      const d = e.data;
+      if (!d || typeof d !== 'object' || !e.source) return;
+      // Origin gate first; the structural checks below (own-child-frames
+      // for requests, direct-parent + solicited-uuid for replies, the
+      // root's never-relay rule) are what hold in fully opaque chains
+      // where origin strings can't discriminate — a sandboxed root's
+      // FOREIGN wrapper still fails all three even though both serialize
+      // as real-vs-'null' rather than matching.
+      if (!trustedOrigin(e)) return;
+      if (typeof d.__bundler_need === 'string' && UUID_SHAPE.test(d.__bundler_need)) {
+        // Requests are honored only for this document's own child frames.
+        if (ownFrameWindows().indexOf(e.source) < 0) return;
+        const uuid = d.__bundler_need;
+        const text = pageTexts[uuid];
+        if (typeof text === 'string') {
+          try { e.source.postMessage({ __bundler_page: uuid, __bundler_text: text }, OWN_TARGET); } catch (err) { /* gone */ }
+          return;
+        }
+        if (isPageRoot || window.parent === window) return; // authoritative miss
+        const waiting = pendingRelays[uuid];
+        if (waiting) {
+          if (waiting.indexOf(e.source) < 0) waiting.push(e.source);
+          return;
+        }
+        // Never-answered uuids would otherwise accumulate forever under a
+        // request spray; past the cap (far above any real page count) new
+        // relays are dropped rather than remembered.
+        if (Object.keys(pendingRelays).length >= 128) return;
+        pendingRelays[uuid] = [e.source];
+        window.parent.postMessage({ __bundler_need: uuid }, OWN_TARGET);
+      } else if (
+        typeof d.__bundler_page === 'string' &&
+        UUID_SHAPE.test(d.__bundler_page) &&
+        typeof d.__bundler_text === 'string'
+      ) {
+        // The shape test is load-bearing beyond tidiness: the solicited
+        // check below uses the in operator, which matches prototype keys
+        // ('__proto__', 'constructor') — an unshaped key would reach
+        // deliverPage and throw, painting the error banner.
+        // Text is accepted only from the direct parent — the document
+        // that minted this one.
+        if (e.source !== window.parent || window.parent === window) return;
+        if (!(d.__bundler_page in pendingFrames) && !(d.__bundler_page in pendingRelays)) return;
+        deliverPage(d.__bundler_page, d.__bundler_text);
+      }
+    });
+
+    const uuids = Object.keys(manifest);
+    setStatus('Unpacking ' + uuids.length + ' assets...');
+
+    await Promise.all(uuids.map(async (uuid) => {
+      const entry = manifest[uuid];
+      try {
+        const binaryStr = atob(entry.data);
+        const bytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+
+        let finalBytes = bytes;
+        if (entry.compressed) {
+          if (typeof DecompressionStream !== 'undefined') {
+            const ds = new DecompressionStream('gzip');
+            const writer = ds.writable.getWriter();
+            const reader = ds.readable.getReader();
+            writer.write(bytes);
+            writer.close();
+            const chunks = [];
+            let totalLen = 0;
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              chunks.push(value);
+              totalLen += value.length;
+            }
+            finalBytes = new Uint8Array(totalLen);
+            let offset = 0;
+            for (const chunk of chunks) { finalBytes.set(chunk, offset); offset += chunk.length; }
+          } else {
+            console.warn('DecompressionStream not available, asset ' + uuid + ' may not render');
+          }
+        }
+
+        if (pageSet.has(uuid)) {
+          pageTexts[uuid] = new TextDecoder().decode(finalBytes);
+          return;
+        }
+        if (FONT_MIME.test(entry.mime) && MIME_TOKEN.test(entry.mime)) {
+          // Strict artifact hosts allow font-src data: but not blob:.
+          blobUrls[uuid] = 'data:' + entry.mime + ';base64,' +
+            (entry.compressed ? toBase64(finalBytes) : entry.data);
+        } else {
+          const blob = new Blob([finalBytes], { type: entry.mime });
+          blobUrls[uuid] = URL.createObjectURL(blob);
+          resourceBlobs[blobUrls[uuid]] = blob;
+        }
+      } catch (err) {
+        console.error('Failed to decode asset ' + uuid + ':', err);
+        const blob = new Blob([], { type: entry.mime });
+        blobUrls[uuid] = URL.createObjectURL(blob);
+        resourceBlobs[blobUrls[uuid]] = blob;
+      }
+    }));
+
+    const extResEl = document.querySelector('script[type="__bundler/ext_resources"]');
+    const extResources = extResEl ? JSON.parse(extResEl.textContent) : [];
+    const resourceMap = {};
+    for (const entry of extResources) {
+      if (blobUrls[entry.uuid]) resourceMap[entry.id] = blobUrls[entry.uuid];
+    }
+
+    // Artifact-host CSP (connect-src 'self') refuses fetch() of blob: URLs —
+    // consumers read these Blobs directly. Survives the swap like the error sink.
+    window.__resourceBlobs = resourceBlobs;
+
+    setStatus('Rendering...');
+    // Page uuids have no blob here — they ride inside about:blank#<uuid>
+    // frame markers the pass below resolves after the swap.
+    for (const uuid of uuids) {
+      if (pageSet.has(uuid)) continue;
+      template = template.split(uuid).join(blobUrls[uuid]);
+    }
+
+    // Strip integrity + crossorigin — blob URLs from a file:// document inherit
+    // a null origin, so crossorigin forces a CORS fetch that SRI then rejects.
+    // The manifest bytes are ours; SRI protects against CDN compromise, not this.
+    template = template.replace(/\s+integrity="[^"]*"/gi, '').replace(/\s+crossorigin="[^"]*"/gi, '');
+
+    const resourceScript = '<script>window.__resources = ' +
+      JSON.stringify(resourceMap).replace(/<\//g, '<\\/') +
+      ';</' + 'script>';
+    // Inject after <head> so the DOCTYPE stays first; prepending the script
+    // would push the parser into quirks mode. DOMParser always emits a <head>
+    // (synthesizing one if the source HTML omitted it) but may carry
+    // attributes through, so match the full opening tag. slice() rather than
+    // replace() keeps us clear of $-pattern substitution in resourceScript.
+    const headOpen = template.match(/<head[^>]*>/i);
+    if (headOpen) {
+      const i = headOpen.index + headOpen[0].length;
+      template = template.slice(0, i) + resourceScript + template.slice(i);
+    }
+
+    // Parse the template and swap the root element. Scripts inserted via
+    // DOMParser/replaceWith are inert per spec — re-create each with
+    // createElement so they execute, awaiting onload for src scripts to
+    // preserve ordering (React before ReactDOM before Babel before text/babel).
+    const doc = new DOMParser().parseFromString(template, 'text/html');
+    document.documentElement.replaceWith(doc.documentElement);
+
+    // Resolve page-frame markers: mint this document's own blob for each
+    // framed page — from local text when this is the root, otherwise by
+    // asking the direct parent over the relay protocol above. An
+    // unanswered request leaves the frame on about:blank, the same
+    // degraded state as a refused embed.
+    {
+      const MARKER = /^about:blank#([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(#.*)?$/;
+      const needed = [];
+      for (const el of Array.from(document.querySelectorAll('iframe'))) {
+        const m = MARKER.exec(el.getAttribute('src') || '');
+        if (!m) continue;
+        const text = pageTexts[m[1]];
+        if (typeof text === 'string') {
+          mountPage(el, m[2] || '', text);
+        } else if (window.parent !== window && !isPageRoot) {
+          const had = pendingFrames[m[1]];
+          (pendingFrames[m[1]] = had || []).push({ el: el, frag: m[2] || '' });
+          if (!had) needed.push(m[1]);
+        }
+      }
+      for (const uuid of needed) {
+        window.parent.postMessage({ __bundler_need: uuid }, OWN_TARGET);
+      }
+    }
+
+    const dead = Array.from(document.scripts);
+    for (const old of dead) {
+      const s = document.createElement('script');
+      for (const a of old.attributes) s.setAttribute(a.name, a.value);
+      s.textContent = old.textContent;
+      // text/babel scripts with a src: read and inline. transformScriptTags
+      // does XHR against the src, but blob:null/ from a file:// origin is
+      // silently dropped. Inlining makes it a plain inline babel script,
+      // which transformScriptTags handles unconditionally.
+      if ((s.type === 'text/babel' || s.type === 'text/jsx') && s.src) {
+        const pre = resourceBlobs[s.src.split('#')[0]];
+        s.textContent = pre ? await pre.text() : await (await fetch(s.src)).text();
+        s.removeAttribute('src');
+      }
+      const p = s.src ? new Promise(function(r) { s.onload = s.onerror = r; }) : null;
+      old.replaceWith(s);
+      if (p) await p;
+    }
+    // Babel standalone auto-transforms type=text/babel on DOMContentLoaded,
+    // which fired before we swapped the document. Trigger manually if present.
+    if (window.Babel && typeof window.Babel.transformScriptTags === 'function') {
+      window.Babel.transformScriptTags();
+    }
+  } catch (err) {
+    setStatus('Error unpacking: ' + err.message);
+    console.error('Bundle unpack error:', err);
+  }
+});
+
+  </script>
+
+  <script type="__bundler/manifest">
+{"bdd25ea6-4925-4706-a8a2-81271c375b93":{"mime":"application/javascript","compressed":true,"data":"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"},"9090313a-f798-4a60-90cb-730dbd95cf1f":{"mime":"text/javascript","compressed":true,"data":"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"}}
+  </script>
+
+  <script type="__bundler/ext_resources">
+[]
+  </script>
+
+  <script type="__bundler/page_order">
+[]
+  </script>
+
+  <script type="__bundler/template">
+"<!DOCTYPE html>\n<html lang=\"es\"><head>\n<meta charset=\"UTF-8\">\n<title>Piano de Cola Negro<\u002Ftitle>\n\n<style>\n  html,body{margin:0;height:100%;overflow:hidden;background:#1b1b1b;font-family:system-ui,sans-serif}\n  three-d-stage:not(:defined){visibility:hidden}\n<\u002Fstyle>\n<script type=\"importmap\">\n{\n  \"imports\": {\n    \"three\": \"https://unpkg.com/three@0.184.0/build/three.module.js\",\n    \"three/addons/controls/OrbitControls.js\": \"https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js\",\n    \"three/addons/exporters/OBJExporter.js\": \"https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js\",\n    \"three/addons/exporters/GLTFExporter.js\": \"https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js\"\n  },\n  \"integrity\": {\n    \"https://unpkg.com/three@0.184.0/build/three.module.js\": \"sha384-8FCZ1eVO6it4+pbec2aDtnTrwjWXZLJRC+MAGCIPDgsYnUrl/E0A2YlF8ioMKI/J\",\n    \"https://unpkg.com/three@0.184.0/build/three.core.js\": \"sha384-dw2ooPewaEIrAgl6oFDBmmBWCE9oW9LxRGcfwZ0hLvEprzo202wXl7vCYHRlSnOT\",\n    \"https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js\": \"sha384-4rziNxOBZKQ69i+w+f89KJ55TCYquwchVbByQwmaOeIOXdOU2PLDn3kOfXHwIJC9\",\n    \"https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js\": \"sha384-nbwtoZENJD3Vq+ACK0CuGQdPMuDWHkamC2KJD70EV5nfg6jQjfppKOea07YJN+N3\",\n    \"https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js\": \"sha384-VofkvpG6HERhFCYbsUOHeNXBCqID2nfqkQqnVzE1jc/oPcz+qJ13ADdXH08hE+cQ\"\n  }\n}\n<\u002Fscript>\n<\u002Fhead>\n<body>\n<three-d-stage name=\"piano-de-cola-negro\" background=\"#1b1b1b\"><\u002Fthree-d-stage>\n<script src=\"9090313a-f798-4a60-90cb-730dbd95cf1f\"><\u002Fscript>\n<script type=\"module\" src=\"bdd25ea6-4925-4706-a8a2-81271c375b93\"><\u002Fscript>\n\n\n<\u002Fbody><\u002Fhtml>"
+  </script>
+</body>
+</html>

@@ -37,3 +37,33 @@ export function serviceRoleKey(): string {
     process.env.SUPABASE_SERVICE_ROLE_KEY,
   );
 }
+
+/**
+ * Server-only. Base URL of the Edy assistant microservice (e.g.
+ * http://localhost:8000). Edy has no auth of its own — never expose this
+ * URL to the client; always call it from a Route Handler. See
+ * app/api/edy/chat/route.ts.
+ */
+export function edyServiceUrl(): string {
+  return required("EDY_SERVICE_URL", process.env.EDY_SERVICE_URL);
+}
+
+/**
+ * LiveKit project config, shared with Edy's voice worker (see the Edy
+ * integration doc, section 04). Server-only: the API key/secret sign
+ * access tokens and must never reach the client. LIVEKIT_URL itself is not
+ * a secret — the browser needs it to open the wss:// connection — but it
+ * is handed to the client via the token endpoint's JSON response instead
+ * of a NEXT_PUBLIC_ var, so there is a single source of truth.
+ */
+export function liveKitConfig(): {
+  url: string;
+  apiKey: string;
+  apiSecret: string;
+} {
+  return {
+    url: required("LIVEKIT_URL", process.env.LIVEKIT_URL),
+    apiKey: required("LIVEKIT_API_KEY", process.env.LIVEKIT_API_KEY),
+    apiSecret: required("LIVEKIT_API_SECRET", process.env.LIVEKIT_API_SECRET),
+  };
+}
