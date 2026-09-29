@@ -21,6 +21,7 @@ export function EnrollButton({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [enrolled, setEnrolled] = useState(isEnrolled);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
 
   if (isOwner) {
     return <p className="muted">This is your course — you can preview all lessons.</p>;
@@ -40,16 +41,31 @@ export function EnrollButton({
     return <p><strong>✓ You&apos;re enrolled</strong></p>;
   }
 
+  if (checkoutUrl) {
+    return (
+      <p>
+        <Link href={checkoutUrl} className="btn">
+          Proceed to checkout
+        </Link>
+      </p>
+    );
+  }
+
   async function enroll() {
     setPending(true);
     setError(null);
-    const res = await fetch(`/api/courses/${courseId}/enroll`, {
+    const res = await fetch(`/api/courses/${courseSlug}/enroll`, {
       method: "POST",
     });
     setPending(false);
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
       setError(json.error ?? "Could not enroll.");
+      return;
+    }
+    const json = await res.json().catch(() => ({}));
+    if (json.checkout?.checkoutUrl) {
+      setCheckoutUrl(json.checkout.checkoutUrl);
       return;
     }
     setEnrolled(true);

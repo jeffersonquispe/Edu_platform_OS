@@ -13,9 +13,10 @@ npm run dev      # dev server with hot reload (localhost:3000)
 npm run build    # production build
 npm start        # serve production build
 npm run lint     # ESLint (eslint-config-next)
+npm run test     # Vitest unit tests (pure functions only, no network/DB)
 ```
 
-There is no test suite configured in this repo.
+`npm run test` runs both levels together: pure, network-free unit tests (e.g. `lib/catalogFilter.ts`, `lib/enrollDecision.ts`) and real-Supabase integration tests (`lib/queries/*.integration.test.ts`, `describe.runIf`-guarded on `.env.local` credentials being present, seeding/cleaning up via the admin client). Some integration coverage instead lives as SQL assertions run directly against Postgres (`supabase/migrations/0003_policy_tests.sql`, `0006_catalog_filter_policy_tests.sql`), outside the Vitest suite — used when the guarantee under test is an RLS policy itself, not application code.
 
 ### Database
 
@@ -44,7 +45,7 @@ All tables have Row Level Security enabled — course ownership gates create/edi
 
 ### App structure
 
-- `app/` — App Router routes: public catalog (`app/page.tsx`), course detail (`app/courses/[slug]/`) and lesson pages (`app/courses/[slug]/lessons/[lessonId]/`), auth (`login/`, `register/`), and the dashboard split into `dashboard/profile/`, `dashboard/learning/` (student view, includes gamification widgets), and `dashboard/teaching/` (instructor view: course list, new course, per-course editor at `[slug]/`). `app/api/` holds Route Handlers (e.g. `courses`, `courses/[courseId]/enroll`).
+- `app/` — App Router routes: public catalog (`app/page.tsx`), course detail (`app/courses/[slug]/`) and lesson pages (`app/courses/[slug]/lessons/[lessonId]/`), auth (`login/`, `register/`), and the dashboard split into `dashboard/profile/`, `dashboard/learning/` (student view, includes gamification widgets), and `dashboard/teaching/` (instructor view: course list, new course, per-course editor at `[slug]/`). `app/api/` holds Route Handlers (e.g. `courses`, `courses/[courseId]/enroll` — despite the folder name, this resolves its param as a course **slug**; Next.js requires sibling routes at this depth to share one dynamic-segment name, so it stayed `[courseId]` when the handler was extended to decide free-enroll vs. simulated-checkout by price, see `lib/enrollDecision.ts`).
 - `components/` — shared React components (editors: `CourseEditor`, `ModuleEditor`, `LessonEditor`; reviews: `ReviewForm`, `ReviewList`, `RatingBadge`; `EnrollButton`, `ProfileForm`, `SiteHeader`, `SignOutButton`, `ThemeToggle`). Two feature subfolders: `components/VideoPlayer/` (video playback with timestamped notes and quiz overlay, plus a `useVideoPlayer` hook) and `components/Gamification/` (XP/streak UI: `XPBurst`, `StreakProtectionModal`).
 - `lib/` — `database.types.ts` (generated Supabase schema types), `slug.ts`, `youtube.ts` helpers, plus `env.ts` and `supabase/` described above.
 

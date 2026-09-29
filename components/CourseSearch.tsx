@@ -2,10 +2,32 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import type { PriceFilter } from "@/lib/catalogFilter";
 
-export function CourseSearch({ initialQuery = "" }: { initialQuery?: string }) {
+const PRICE_OPTIONS: { value: PriceFilter; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "free", label: "Gratis" },
+  { value: "paid", label: "De pago" },
+];
+
+function buildCatalogUrl(query: string, price: PriceFilter) {
+  const params = new URLSearchParams();
+  if (query) params.set("q", query);
+  if (price !== "all") params.set("price", price);
+  const qs = params.toString();
+  return qs ? `/?${qs}` : "/";
+}
+
+export function CourseSearch({
+  initialQuery = "",
+  initialPriceFilter = "all",
+}: {
+  initialQuery?: string;
+  initialPriceFilter?: PriceFilter;
+}) {
   const router = useRouter();
   const [value, setValue] = useState(initialQuery);
+  const [priceFilter, setPriceFilter] = useState<PriceFilter>(initialPriceFilter);
   const [isPending, setIsPending] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -13,80 +35,105 @@ export function CourseSearch({ initialQuery = "" }: { initialQuery?: string }) {
   // was submitted, the navigation has landed.
   useEffect(() => {
     setValue(initialQuery);
+    setPriceFilter(initialPriceFilter);
     setIsPending(false);
-  }, [initialQuery]);
+  }, [initialQuery, initialPriceFilter]);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const q = value.trim();
-    if (q === initialQuery.trim()) return;
+    if (q === initialQuery.trim() && priceFilter === initialPriceFilter) return;
     setIsPending(true);
-    router.push(q ? `/?q=${encodeURIComponent(q)}` : "/");
+    router.push(buildCatalogUrl(q, priceFilter));
+  }
+
+  function selectPrice(next: PriceFilter) {
+    if (next === priceFilter) return;
+    setPriceFilter(next);
+    setIsPending(true);
+    router.push(buildCatalogUrl(value.trim(), next));
   }
 
   function clear() {
     setValue("");
     if (initialQuery) {
       setIsPending(true);
-      router.push("/");
+      router.push(buildCatalogUrl("", priceFilter));
     }
     inputRef.current?.focus();
   }
 
   return (
-    <form className="course-search" onSubmit={submit} role="search">
-      <div className="course-search-field">
-        <svg
-          className="course-search-icon"
-          viewBox="0 0 20 20"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          aria-hidden="true"
-        >
-          <circle cx="9" cy="9" r="6" />
-          <path d="m13.5 13.5 3.5 3.5" strokeLinecap="round" />
-        </svg>
-
-        <input
-          ref={inputRef}
-          type="search"
-          name="q"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder="Busca por tema, tecnología o lo que quieras aprender…"
-          aria-label="Buscar cursos"
-          autoComplete="off"
-          enterKeyHint="search"
-        />
-
-        {value && (
-          <button
-            type="button"
-            className="course-search-clear"
-            onClick={clear}
-            aria-label="Limpiar búsqueda"
+    <div className="course-search-wrapper">
+      <form className="course-search" onSubmit={submit} role="search">
+        <div className="course-search-field">
+          <svg
+            className="course-search-icon"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            aria-hidden="true"
           >
-            <svg
-              viewBox="0 0 20 20"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              aria-hidden="true"
-            >
-              <path d="m6 6 8 8M14 6l-8 8" strokeLinecap="round" />
-            </svg>
-          </button>
-        )}
-      </div>
+            <circle cx="9" cy="9" r="6" />
+            <path d="m13.5 13.5 3.5 3.5" strokeLinecap="round" />
+          </svg>
 
-      <button
-        className="btn btn-primary"
-        type="submit"
-        disabled={isPending || !value.trim()}
-      >
-        {isPending ? "Buscando…" : "Buscar"}
-      </button>
-    </form>
+          <input
+            ref={inputRef}
+            type="search"
+            name="q"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="Busca por tema, tecnología o lo que quieras aprender…"
+            aria-label="Buscar cursos"
+            autoComplete="off"
+            enterKeyHint="search"
+          />
+
+          {value && (
+            <button
+              type="button"
+              className="course-search-clear"
+              onClick={clear}
+              aria-label="Limpiar búsqueda"
+            >
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                aria-hidden="true"
+              >
+                <path d="m6 6 8 8M14 6l-8 8" strokeLinecap="round" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        <button
+          className="btn btn-primary"
+          type="submit"
+          disabled={isPending || value.trim() === initialQuery.trim()}
+        >
+          {isPending ? "Buscando…" : "Buscar"}
+        </button>
+      </form>
+
+      <div className="course-search-price-filter" role="group" aria-label="Filtrar por precio">
+        {PRICE_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={`price-filter-pill${priceFilter === option.value ? " active" : ""}`}
+            aria-pressed={priceFilter === option.value}
+            onClick={() => selectPrice(option.value)}
+            disabled={isPending}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

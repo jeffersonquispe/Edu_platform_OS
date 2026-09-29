@@ -708,6 +708,45 @@ textarea {
   color: var(--color-muted);
 }
 
+.course-search-wrapper {
+  max-width: 620px;
+}
+
+.course-search-price-filter {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.price-filter-pill {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: color var(--dur-base) var(--ease-out),
+              background var(--dur-base) var(--ease-out),
+              border-color var(--dur-base) var(--ease-out);
+}
+
+.price-filter-pill:hover {
+  color: var(--color-text);
+  background: var(--color-surface-2);
+}
+
+.price-filter-pill:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.price-filter-pill.active {
+  color: var(--color-brand-contrast, #fff);
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+}
+
 @media (max-width: 560px) {
   .course-search {
     flex-direction: column;

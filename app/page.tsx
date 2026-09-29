@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { CourseCard } from "@/components/CourseCard";
 import { CourseSearch } from "@/components/CourseSearch";
 import { searchCoursesBySimilarity } from "@/lib/search";
+import { filterCourses, type PriceFilter } from "@/lib/catalogFilter";
+import { getPublishedCourses } from "@/lib/queries/getPublishedCourses";
 
 export const metadata = {
   title: "Course Catalog",
@@ -10,18 +12,25 @@ export const metadata = {
 type CourseListItem = {
   id: string;
   title: string;
+  description: string | null;
+  price: number;
   slug: string;
   cover_url: string | null;
   authorName: string | null;
 };
 
+function parsePriceFilter(value: string | undefined): PriceFilter {
+  return value === "free" || value === "paid" ? value : "all";
+}
+
 export default async function CatalogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; price?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, price } = await searchParams;
   const query = q?.trim() ?? "";
+  const priceFilter = parsePriceFilter(price);
   const supabase = await createClient();
 
   let courses: CourseListItem[] = [];
@@ -38,7 +47,7 @@ export default async function CatalogPage({
       if (ids.length > 0) {
         const { data } = await supabase
           .from("courses")
-          .select("id, title, slug, cover_url, profiles ( display_name )")
+          .select("id, title, description, price, slug, cover_url, profiles ( display_name )")
           .in("id", ids);
 
         const byId = new Map((data ?? []).map((c) => [c.id, c]));
@@ -50,6 +59,8 @@ export default async function CatalogPage({
             {
               id: c.id,
               title: c.title,
+              description: c.description,
+              price: c.price,
               slug: c.slug,
               cover_url: c.cover_url,
               authorName: author?.display_name ?? null,
@@ -62,11 +73,7 @@ export default async function CatalogPage({
         e instanceof Error ? e.message : "No se pudo completar la búsqueda.";
     }
   } else {
-    const { data, error: listError } = await supabase
-      .from("courses")
-      .select("id, title, slug, cover_url, profiles ( display_name )")
-      .eq("status", "published")
-      .order("created_at", { ascending: false });
+    const { data, error: listError } = await getPublishedCourses(supabase);
 
     error = listError?.message ?? null;
     courses = (data ?? []).map((c) => {
@@ -74,12 +81,20 @@ export default async function CatalogPage({
       return {
         id: c.id,
         title: c.title,
+        description: c.description,
+        price: c.price,
         slug: c.slug,
         cover_url: c.cover_url,
         authorName: author?.display_name ?? null,
       };
     });
   }
+
+  // filterCourses is a pure, network-free narrowing of the already-fetched,
+  // already-published-only result set above — it never decides which
+  // courses are visible in the first place (that's the `status = 'published'`
+  // RLS policy's job), it only applies the price filter on top.
+  courses = filterCourses(courses, { priceFilter });
 
   const courseIds = courses.map((c) => c.id);
   const { data: ratings } = courseIds.length
@@ -108,7 +123,7 @@ export default async function CatalogPage({
           Explore expert-led courses and start building skills that matter —
           at your own pace, anytime.
         </p>
-        <CourseSearch initialQuery={query} />
+        <CourseSearch initialQuery={query} initialPriceFilter={priceFilter} />
       </section>
 
       {/* Error state */}
@@ -126,10 +141,21 @@ export default async function CatalogPage({
       {/* Empty states */}
       {!error && courses.length === 0 && (
         <div className="empty-state animate-fade-in">
-          {query ? (
+          {query && priceFilter !== "all" ? (
+            <p>
+              No encontramos cursos {priceFilter === "free" ? "gratis" : "de pago"}{" "}
+              relacionados con <strong>“{query}”</strong>. Prueba con otras
+              palabras o quita el filtro de precio.
+            </p>
+          ) : query ? (
             <p>
               No encontramos cursos relacionados con <strong>“{query}”</strong>.
               Prueba con otras palabras.
+            </p>
+          ) : priceFilter !== "all" ? (
+            <p>
+              No hay cursos {priceFilter === "free" ? "gratis" : "de pago"} disponibles
+              por ahora.
             </p>
           ) : (
             <p>No courses published yet — check back soon.</p>

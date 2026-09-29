@@ -4,6 +4,9 @@ Todas las fechas usan formato AAAA-MM-DD.
 
 ## [Unreleased]
 
+### Mejorado
+- Página de detalle de curso (`app/courses/[slug]/page.tsx`): metadata dinámica vía `generateMetadata` (title, description, canonical, Open Graph, Twitter card) generada a partir de los datos reales del curso; datos estructurados `schema.org` `Course` (JSON-LD) con `url`, `image`, `provider`, `author` y `aggregateRating` cuando existen reseñas. Auditado con el skill `tech-lead`: jerarquía de encabezados corregida (h1 → h2 → h3 por módulo), `alt` descriptivo en la portada, estado de lección bloqueada comunicado como texto para lectores de pantalla (antes solo un emoji), y metadata de "no encontrado" delegada al manejo de `notFound()` en vez de un título propio. Ver `openspec/specs/course-catalog/spec.md` (Requirement: "Course detail page metadata, structured data, and accessibility").
+
 ### Añadido
 - Asistente conversacional **Edy** integrado como widget flotante disponible en toda la plataforma (`components/EdyAssistant/`), con modo texto y modo llamada de voz conmutables desde el mismo panel. Ver especificación en `openspec/changes/add-edy-assistant/`.
   - Canal de texto: `app/api/edy/chat/route.ts` actúa como proxy server-side hacia el microservicio Edy (`POST {EDY_SERVICE_URL}/chat`); el navegador nunca llama a Edy directamente, ya que su endpoint no tiene autenticación propia (contrato de red interna).

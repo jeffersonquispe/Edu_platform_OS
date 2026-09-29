@@ -42,6 +42,30 @@ The system SHALL provide a detail page for a published course showing its title,
 - **WHEN** a non-owner opens the detail URL of a draft course
 - **THEN** the system responds as if the course does not exist
 
+### Requirement: Course detail page metadata, structured data, and accessibility
+
+The system SHALL generate page metadata (title, description, canonical URL, Open Graph, and Twitter card) for the course detail page from the course's own data, and SHALL emit `schema.org` `Course` JSON-LD including name, description, url, image, provider, author, and aggregate rating when reviews exist. The page SHALL expose a single `h1` (course title), a locked lesson's status SHALL be conveyed to assistive technology as text rather than through an emoji alone, and the cover image SHALL have a descriptive `alt`.
+
+#### Scenario: Metadata reflects the course
+
+- **WHEN** a course detail page is requested for a published course
+- **THEN** the response's `<title>` and description meta tag are derived from that course's title and description, not a generic placeholder
+
+#### Scenario: Structured data present for a rated course
+
+- **WHEN** a course has at least one review
+- **THEN** the page's `Course` JSON-LD includes an `aggregateRating` with the course's average rating and review count
+
+#### Scenario: Locked lesson announced to screen readers
+
+- **WHEN** a visitor who is neither enrolled nor the owner views the lesson outline
+- **THEN** each locked lesson communicates its locked state through text available to assistive technology, not only through an emoji icon
+
+#### Scenario: Course not found metadata does not conflict with 404 handling
+
+- **WHEN** a course slug does not resolve to a visible course
+- **THEN** `generateMetadata` defers to the route's `not-found` handling rather than asserting its own title
+
 ### Requirement: Aggregate rating display
 
 The system SHALL compute and display each course's average rating and review count from its reviews. A course with no reviews SHALL display as unrated rather than as zero.
