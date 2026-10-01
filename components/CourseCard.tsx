@@ -29,6 +29,8 @@ export function CourseCard({
       href={`/courses/${slug}`}
       className="course-card"
       aria-label={`${title} por ${authorName ?? "Instructor desconocido"}`}
+      data-testid="course-card"
+      data-course-title={title}
     >
       {coverUrl ? (
         // eslint-disable-next-line @next/next/no-img-element

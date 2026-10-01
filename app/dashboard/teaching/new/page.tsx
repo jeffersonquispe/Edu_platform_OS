@@ -1,28 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function NewCoursePage() {
   const router = useRouter();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [coverUrl, setCoverUrl] = useState("");
+  // Uncontrolled inputs: anything typed before hydration stays in the DOM
+  // (a controlled input would be reset to its initial "" state by React).
+  const titleRef = useRef<HTMLInputElement>(null);
+  const [hydrated, setHydrated] = useState(false);
+  const [hasTitle, setHasTitle] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    setHasTitle(Boolean(titleRef.current?.value));
+    setHydrated(true);
+  }, []);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setPending(true);
 
+    const form = new FormData(e.currentTarget);
     const res = await fetch("/api/courses", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        title,
-        description,
-        cover_url: coverUrl,
+        title: form.get("title"),
+        description: form.get("description"),
+        cover_url: form.get("cover_url"),
       }),
     });
     const json = await res.json();
@@ -44,27 +52,26 @@ export default function NewCoursePage() {
         <label htmlFor="title">Title</label>
         <input
           id="title"
+          name="title"
           required
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          ref={titleRef}
+          onInput={(e) => setHasTitle(Boolean(e.currentTarget.value))}
         />
 
         <label htmlFor="description">Description</label>
-        <textarea
-          id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
+        <textarea id="description" name="description" />
 
         <label htmlFor="cover_url">Cover image URL</label>
-        <input
-          id="cover_url"
-          type="url"
-          value={coverUrl}
-          onChange={(e) => setCoverUrl(e.target.value)}
-        />
+        <input id="cover_url" name="cover_url" type="url" />
 
-        <button className="btn" type="submit" disabled={pending || !title}>
+        {/* Disabled until hydrated so a pre-hydration click can't trigger a
+            native GET submit that bypasses handleSubmit. */}
+        <button
+          className="btn"
+          type="submit"
+          disabled={!hydrated || pending || !hasTitle}
+          data-testid="create-course-submit"
+        >
           {pending ? "Creating…" : "Create course (draft)"}
         </button>
       </form>
