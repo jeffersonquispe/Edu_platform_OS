@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/browser";
@@ -48,6 +48,12 @@ export function CourseEditor({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  // The status change and the server refresh commit together, so the new
+  // status is only shown once no refresh is left in flight (an aborted RSC
+  // refresh makes Next fall back to a hard reload of this page, hijacking
+  // whatever navigation the user started next).
+  const [refreshing, startRefresh] = useTransition();
 
   async function saveCourseFields(e: React.FormEvent) {
     e.preventDefault();
@@ -72,18 +78,22 @@ export function CourseEditor({
 
   async function togglePublish() {
     setError(null);
+    setPublishing(true);
     const next = status === "published" ? "draft" : "published";
     const supabase = createClient();
     const { error: updateError } = await supabase
       .from("courses")
       .update({ status: next })
       .eq("id", course.id);
+    setPublishing(false);
     if (updateError) {
       setError(updateError.message);
       return;
     }
-    setStatus(next);
-    router.refresh();
+    startRefresh(() => {
+      setStatus(next);
+      router.refresh();
+    });
   }
 
   async function deleteCourse() {
@@ -201,14 +211,21 @@ export function CourseEditor({
         }}
       >
         <div>
-          <strong>Status: {status === "published" ? "Published" : "Draft"}</strong>
+          <strong data-testid="course-status">
+            Status: {status === "published" ? "Published" : "Draft"}
+          </strong>
           <p className="muted" style={{ margin: "4px 0 0" }}>
             {status === "published"
               ? "Visible in the public catalog."
               : "Only visible to you until published."}
           </p>
         </div>
-        <button className="btn" onClick={togglePublish}>
+        <button
+          className="btn"
+          onClick={togglePublish}
+          disabled={publishing || refreshing}
+          data-testid="toggle-publish"
+        >
           {status === "published" ? "Unpublish" : "Publish"}
         </button>
       </div>

@@ -30,10 +30,19 @@ export function CourseSearch({
   const [priceFilter, setPriceFilter] = useState<PriceFilter>(initialPriceFilter);
   const [isPending, setIsPending] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const hydratedRef = useRef(false);
 
-  // The server re-renders with new results; once the URL's query matches what
-  // was submitted, the navigation has landed.
+  // The input is uncontrolled so text typed before hydration survives it (a
+  // controlled input would be reset to initialQuery). On mount, adopt what's
+  // in the DOM; afterwards, the server re-renders with new results and once
+  // the URL's query matches what was submitted, the navigation has landed.
   useEffect(() => {
+    if (!hydratedRef.current) {
+      hydratedRef.current = true;
+      setValue(inputRef.current?.value ?? initialQuery);
+      return;
+    }
+    if (inputRef.current) inputRef.current.value = initialQuery;
     setValue(initialQuery);
     setPriceFilter(initialPriceFilter);
     setIsPending(false);
@@ -55,6 +64,7 @@ export function CourseSearch({
   }
 
   function clear() {
+    if (inputRef.current) inputRef.current.value = "";
     setValue("");
     if (initialQuery) {
       setIsPending(true);
@@ -83,7 +93,7 @@ export function CourseSearch({
             ref={inputRef}
             type="search"
             name="q"
-            value={value}
+            defaultValue={initialQuery}
             onChange={(e) => setValue(e.target.value)}
             placeholder="Busca por tema, tecnología o lo que quieras aprender…"
             aria-label="Buscar cursos"

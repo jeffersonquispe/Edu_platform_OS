@@ -14,36 +14,15 @@ import type { Database } from "@/lib/database.types";
 // replaces what used to be a courseId-keyed handler at the same path, so
 // the parameter name stayed `courseId` for that reason alone. Read the
 // incoming value as a slug, not a UUID.
-async function getAuthenticatedClient(request: Request) {
+// Real browsers authenticate via the cookie session (lib/supabase/server.ts).
+// A `Bearer` token is also accepted so non-browser callers (integration
+// tests, future mobile/API clients) can authenticate the same request
+// without needing to fabricate `@supabase/ssr`'s internal cookie format.
+// Either path still goes through the anon-key client, so RLS applies
+// identically — this is not a way to bypass authorization.
+function getBearerToken(request: Request) {
   const authHeader = request.headers.get("authorization");
-  const bearerToken = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
-
-  // Real browsers authenticate via the cookie session (lib/supabase/server.ts).
-  // A `Bearer` token is also accepted so non-browser callers (integration
-  // tests, future mobile/API clients) can authenticate the same request
-  // without needing to fabricate `@supabase/ssr`'s internal cookie format.
-  // Either path still goes through the anon-key client, so RLS applies
-  // identically — this is not a way to bypass authorization.
-  if (bearerToken) {
-    const supabase = createSupabaseClient<Database>(
-      env.supabaseUrl,
-      env.supabaseAnonKey,
-      {
-        global: { headers: { Authorization: `Bearer ${bearerToken}` } },
-        auth: { autoRefreshToken: false, persistSession: false },
-      },
-    );
-    const {
-      data: { user },
-    } = await supabase.auth.getUser(bearerToken);
-    return { supabase, user };
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return { supabase, user };
+  return authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
 }
 
 export async function POST(
@@ -53,7 +32,29 @@ export async function POST(
   // Despite the parameter name (forced by Next.js's routing constraints,
   // see the note above), this value is the course's slug.
   const { courseId: slug } = await params;
-  const { supabase, user } = await getAuthenticatedClient(request);
+
+  const bearerToken = getBearerToken(request);
+  const supabase = bearerToken
+    ? createSupabaseClient<Database>(env.supabaseUrl, env.supabaseAnonKey, {
+        global: { headers: { Authorization: `Bearer ${bearerToken}` } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      })
+    : await createClient();
+
+  // auth.getUser() and the course lookup are independent network calls —
+  // the lookup only needs the request's cookies/JWT (already attached to
+  // `supabase`), not the *resolved* user, so run them concurrently instead
+  // of paying for two sequential round-trips to Supabase.
+  const [{ data: userData }, { data: course, error: courseError }] =
+    await Promise.all([
+      bearerToken ? supabase.auth.getUser(bearerToken) : supabase.auth.getUser(),
+      supabase
+        .from("courses")
+        .select("id, price, status")
+        .eq("slug", slug)
+        .maybeSingle(),
+    ]);
+  const user = userData.user;
 
   if (!user) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
@@ -62,12 +63,6 @@ export async function POST(
   // RLS ("published or own courses are readable") already hides a draft
   // course from a non-owner here — no row back means 404, same as the
   // course detail page's "Draft course detail hidden" behavior.
-  const { data: course, error: courseError } = await supabase
-    .from("courses")
-    .select("id, price, status")
-    .eq("slug", slug)
-    .maybeSingle();
-
   if (courseError || !course) {
     return NextResponse.json({ error: "Course not found." }, { status: 404 });
   }
@@ -90,18 +85,8 @@ export async function POST(
     );
   }
 
-  // Already enrolled? Treat as a no-op success rather than an error.
-  const { data: existing } = await supabase
-    .from("enrollments")
-    .select("id")
-    .eq("course_id", course.id)
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (existing) {
-    return NextResponse.json({ enrollment: existing }, { status: 200 });
-  }
-
+  // Already enrolled? The unique (user_id, course_id) constraint below
+  // catches this on insert (23505) — no need for a separate lookup first.
   // RLS also enforces: user_id = auth.uid() AND target course is published.
   const { data, error } = await supabase
     .from("enrollments")
