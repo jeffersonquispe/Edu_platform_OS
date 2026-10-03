@@ -7,7 +7,7 @@ export function RatingBadge({
 }) {
   if (!reviewCount || avgRating === null) {
     return (
-      <span style={{ fontSize: "var(--text-xs)", color: "var(--color-muted-2)" }}>
+      <span style={{ fontSize: "var(--text-xs)", color: "var(--color-muted)" }}>
         No ratings yet
       </span>
     );

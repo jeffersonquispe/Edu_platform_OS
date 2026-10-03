@@ -169,7 +169,7 @@ export default async function CatalogPage({
           className="catalog-grid stagger animate-slide-up"
           aria-label={query ? "Resultados de búsqueda" : "Available courses"}
         >
-          {courses.map((c) => {
+          {courses.map((c, idx) => {
             const rating = ratingsByCourse.get(c.id);
 
             return (
@@ -182,6 +182,7 @@ export default async function CatalogPage({
                 authorName={c.authorName}
                 avgRating={rating?.avg_rating ?? null}
                 reviewCount={rating?.review_count ?? 0}
+                priority={idx < 2}
               />
             );
           })}

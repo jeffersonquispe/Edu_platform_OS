@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
 
 /**
  * Flujo encadenado: visitante -> instructor crea y publica un curso gratis ->
@@ -11,6 +12,16 @@ const courseTitle = `Curso E2E ${Date.now()}`;
 const courseDescription = "Curso de prueba generado por el test E2E.";
 
 test.describe.serial("Flujo EduPlatform: visitante, instructor y estudiante", () => {
+  test.afterAll(async () => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (supabaseUrl && serviceRoleKey) {
+      const admin = createClient(supabaseUrl, serviceRoleKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      await admin.from("courses").delete().ilike("title", "%E2E%");
+    }
+  });
   test.describe("Visitante navega el catálogo", () => {
     test("ve el catálogo público y el widget de Edy", async ({ page }) => {
       await page.goto("/");

@@ -72,6 +72,7 @@ const COURSES = [
     description: "Fundamentos de JavaScript moderno: variables, funciones, arrays y objetos.",
     status: "published",
     price: 0,
+    cover_url: "/images/courses/javascript.jpg",
     modules: [
       {
         title: "Primeros pasos",
@@ -95,6 +96,7 @@ const COURSES = [
     description: "Aprende a construir interfaces con React 19 y componentes funcionales.",
     status: "published",
     price: 29.99,
+    cover_url: "/images/courses/react.jpg",
     modules: [
       {
         title: "Componentes",
@@ -111,6 +113,7 @@ const COURSES = [
     description: "Modelado relacional, SQL y buenas prácticas con PostgreSQL.",
     status: "draft",
     price: 19.99,
+    cover_url: "/images/courses/postgres.jpg",
     modules: [
       {
         title: "Fundamentos de SQL",
@@ -126,6 +129,7 @@ const COURSES = [
     description: "Construye APIs REST con Node.js, Express y buenas prácticas de diseño.",
     status: "published",
     price: 24.99,
+    cover_url: "/images/courses/nodejs.jpg",
     modules: [
       {
         title: "Fundamentos de Node.js",
@@ -148,6 +152,7 @@ const COURSES = [
     description: "Tipado estático, interfaces, genéricos y migración de proyectos JavaScript a TypeScript.",
     status: "published",
     price: 15.99,
+    cover_url: "/images/courses/typescript.jpg",
     modules: [
       {
         title: "Tipos básicos",
@@ -164,6 +169,7 @@ const COURSES = [
     description: "Principios de diseño de interfaces, accesibilidad y flujos de usuario para equipos técnicos.",
     status: "draft",
     price: 0,
+    cover_url: "/images/courses/uxui.jpg",
     modules: [
       {
         title: "Principios de diseño",
@@ -179,6 +185,7 @@ const COURSES = [
     description: "Manipulación de datos con pandas, NumPy y visualización con Matplotlib.",
     status: "published",
     price: 22.99,
+    cover_url: "/images/courses/python.jpg",
     modules: [
       {
         title: "Fundamentos de Python",
@@ -201,6 +208,7 @@ const COURSES = [
     description: "Empaqueta y despliega aplicaciones con Docker: imágenes, volúmenes y redes.",
     status: "published",
     price: 18.99,
+    cover_url: "/images/courses/docker.jpg",
     modules: [
       {
         title: "Introducción a Docker",
@@ -217,6 +225,7 @@ const COURSES = [
     description: "Pruebas unitarias y de integración con Jest y Testing Library.",
     status: "draft",
     price: 12.99,
+    cover_url: "/images/courses/testing.jpg",
     modules: [
       {
         title: "Fundamentos de testing",
@@ -232,6 +241,7 @@ const COURSES = [
     description: "Flujos de trabajo con Git: ramas, merges, rebase y colaboración en equipo.",
     status: "published",
     price: 0,
+    cover_url: "/images/courses/git.jpg",
     modules: [
       {
         title: "Fundamentos de Git",
@@ -248,6 +258,7 @@ const COURSES = [
     description: "Introducción al aprendizaje automático: regresión, clasificación, y modelos con scikit-learn.",
     status: "published",
     price: 29.99,
+    cover_url: "/images/courses/machine-learning.jpg",
     modules: [
       {
         title: "Fundamentos de Machine Learning",
@@ -277,6 +288,7 @@ const COURSES = [
     description: "Cómo aplicar inteligencia artificial para generar y validar ideas de negocio: casos de uso, prototipado con LLMs y medición de impacto.",
     status: "published",
     price: 34.99,
+    cover_url: "/images/courses/ia-innovacion.jpg",
     modules: [
       {
         title: "El potencial de la IA en la innovación",
@@ -307,6 +319,7 @@ const COURSES = [
     description: "Construye interfaces accesibles siguiendo WCAG: semántica, ARIA y navegación por teclado.",
     status: "published",
     price: 9.99,
+    cover_url: "/images/courses/accesibilidad.jpg",
     modules: [
       {
         title: "Fundamentos de accesibilidad",
@@ -391,7 +404,16 @@ async function main() {
     let courseId;
     if (existingCourse) {
       courseId = existingCourse.id;
-      console.log(`- Curso ya existe: ${course.title}`);
+      const { error: updateErr } = await admin
+        .from("courses")
+        .update({
+          cover_url: course.cover_url,
+          description: course.description,
+          price: course.price,
+        })
+        .eq("id", courseId);
+      if (updateErr) console.warn(`Error al actualizar cover_url para ${course.title}:`, updateErr);
+      console.log(`- Curso existente actualizado: ${course.title}`);
     } else {
       const { data: inserted, error } = await admin
         .from("courses")
@@ -402,6 +424,7 @@ async function main() {
           description: course.description,
           status: course.status,
           price: course.price,
+          cover_url: course.cover_url,
         })
         .select("id")
         .single();

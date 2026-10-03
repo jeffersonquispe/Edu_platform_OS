@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { RatingBadge } from "@/components/RatingBadge";
 
@@ -9,6 +10,7 @@ export interface CourseCardProps {
   authorName?: string | null;
   avgRating?: number | null;
   reviewCount?: number;
+  priority?: boolean;
 }
 
 export function CourseCard({
@@ -18,6 +20,7 @@ export function CourseCard({
   authorName,
   avgRating = null,
   reviewCount = 0,
+  priority = false,
 }: CourseCardProps) {
   // Generate consistent dynamic gradient based on course title char code
   const titleCharCode = title.charCodeAt(0) || 65;
@@ -33,11 +36,15 @@ export function CourseCard({
       data-course-title={title}
     >
       {coverUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={coverUrl}
           alt={`Portada del curso ${title}`}
           className="course-card-thumb"
+          width={640}
+          height={360}
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          quality={70}
+          priority={priority}
         />
       ) : (
         /* Placeholder gradient thumb */
