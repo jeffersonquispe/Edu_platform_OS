@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { CourseCard } from "@/components/CourseCard";
 import { CourseSearch } from "@/components/CourseSearch";
+import { PromoBanner } from "@/components/PromoBanner";
 import { searchCoursesBySimilarity } from "@/lib/search";
 import { filterCourses, type PriceFilter } from "@/lib/catalogFilter";
 import { getPublishedCourses } from "@/lib/queries/getPublishedCourses";
@@ -113,6 +114,8 @@ export default async function CatalogPage({
 
   return (
     <>
+      <PromoBanner />
+
       {/* Hero */}
       <section
         className="catalog-hero animate-fade-in"
@@ -169,7 +172,7 @@ export default async function CatalogPage({
           className="catalog-grid stagger animate-slide-up"
           aria-label={query ? "Resultados de búsqueda" : "Available courses"}
         >
-          {courses.map((c) => {
+          {courses.map((c, idx) => {
             const rating = ratingsByCourse.get(c.id);
 
             return (
@@ -182,6 +185,7 @@ export default async function CatalogPage({
                 authorName={c.authorName}
                 avgRating={rating?.avg_rating ?? null}
                 reviewCount={rating?.review_count ?? 0}
+                priority={idx < 2}
               />
             );
           })}

@@ -38,7 +38,11 @@ export function EnrollButton({
   }
 
   if (enrolled) {
-    return <p><strong>✓ You&apos;re enrolled</strong></p>;
+    return (
+      <p data-testid="enrolled-confirmation">
+        <strong>✓ You&apos;re enrolled</strong>
+      </p>
+    );
   }
 
   if (checkoutUrl) {
@@ -75,7 +79,12 @@ export function EnrollButton({
   return (
     <div>
       {error && <div className="error">{error}</div>}
-      <button className="btn" onClick={enroll} disabled={pending}>
+      <button
+        className="btn"
+        onClick={enroll}
+        disabled={pending}
+        data-testid="enroll-button"
+      >
         {pending ? "Enrolling…" : "Enroll for free"}
       </button>
     </div>

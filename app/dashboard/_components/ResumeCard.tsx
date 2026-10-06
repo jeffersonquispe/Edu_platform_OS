@@ -34,6 +34,8 @@ export function ResumeCard({ course, progressPercent = 0 }: ResumeCardProps) {
     <div
       className="bento-card bento-resume"
       style={{ display: "flex", gap: "var(--space-6)", alignItems: "stretch" }}
+      data-testid="resume-card"
+      data-course-title={course.title}
     >
       {/* Thumbnail */}
       {course.cover_url && (

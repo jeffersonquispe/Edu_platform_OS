@@ -278,6 +278,7 @@ export function EdyAssistant() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={open ? "Cerrar asistente Edy" : "Abrir asistente Edy"}
+        data-testid="edy-launcher"
       >
         {open ? "✕" : "✦"}
       </button>
