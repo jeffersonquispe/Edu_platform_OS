@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { CourseCard } from "@/components/CourseCard";
 import { CourseSearch } from "@/components/CourseSearch";
+import { PromoBanner } from "@/components/PromoBanner";
 import { searchCoursesBySimilarity } from "@/lib/search";
 import { filterCourses, type PriceFilter } from "@/lib/catalogFilter";
 import { getPublishedCourses } from "@/lib/queries/getPublishedCourses";
@@ -113,6 +114,8 @@ export default async function CatalogPage({
 
   return (
     <>
+      <PromoBanner />
+
       {/* Hero */}
       <section
         className="catalog-hero animate-fade-in"

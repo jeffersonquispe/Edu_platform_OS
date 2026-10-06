@@ -541,6 +541,32 @@ textarea {
   margin-top: var(--space-8);
 }
 
+/* Promo banner (catalog) */
+.promo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-brand-soft);
+  border: 1px solid var(--color-brand-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+}
+.promo-banner-text {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-2);
+}
+.promo-banner-link {
+  font-weight: var(--fw-semibold);
+  text-decoration: underline;
+  white-space: nowrap;
+}
+.promo-banner-close {
+  flex-shrink: 0;
+}
+
 .catalog-hero {
   padding: var(--space-16) 0 var(--space-10);
 }
